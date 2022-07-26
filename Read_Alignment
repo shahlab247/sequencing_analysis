@@ -1,0 +1,31 @@
+### Command line protocol for read alignment of raw sequencing data
+
+### Analysis was performed on UC Davis CRICK Cluster
+### All directories and filenames are specific to data analysis.
+
+### modules used
+module load star 
+module load featureCounts
+
+### create index based on human genome
+STAR --runThreadN 24 \
+--runMode genomeGenerate --genomeDir /home/mwkenast/RNASEQ/38_index \
+            --genomeFastaFiles 38.fa \
+            --sjdbGTFfile 38.gtf \
+            --sjdbOverhang 84 --outFileNamePrefix hg38
+            
+### perform alignment of each read file against previously created index     
+for i in $(ls /home/mwkenast/RNASEQ/raw/Project_PSMK_Tag0110P_Kenaston); 
+do echo
+STAR --genomeDir "/home/mwkenast/RNASEQ/38_index" \
+--readFilesIn /home/mwkenast/RNASEQ/raw/Project_PSMK_Tag0110P_Kenaston/$i \
+--runThreadN 24 --outFileNamePrefix aligned/$i. \
+--outSAMtype BAM SortedByCoordinate \
+--quantMode GeneCounts \
+--sjdbGTFfile 38.gtf \
+--readFilesCommand zcat ; done
+            
+### create count matrix from resulted alignment      
+featureCounts -a /home/mwkenast/RNASEQ/38.gtf \
+-o /home/mwkenast/RNASEQ/counts/MWK.txt -s 1 \
+/home/mwkenast/RNASEQ/aligned/bam/*bam
